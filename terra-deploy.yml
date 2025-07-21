@@ -1,0 +1,57 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+ paths:
+   include:
+     - infra/*
+
+pool:
+  name: 'VmPool'
+variables:
+- group: weather-app-secrets
+
+stages:
+  - stage: 'Build'
+    jobs:
+      - job: 'Build'
+        steps:
+          - task: TerraformTask@5
+            displayName: 'Init'
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: 'infra/'
+              backendServiceArm: 'myTerraformSP'
+              backendAzureRmOverrideSubscriptionID: '68e44dea-d62f-4cee-a1be-36e44e37955e'
+              backendAzureRmResourceGroupName: 'practice-rg'
+              backendAzureRmStorageAccountName: 'sreestoragelearn'
+              backendAzureRmContainerName: 'tfstate'
+              backendAzureRmKey: 'infra/terraform.tfstate'
+
+          - task: TerraformTask@5
+            displayName: 'validate'
+            inputs:
+              provider: 'azurerm'
+              command: 'validate'
+              workingDirectory: 'infra/'
+
+          - task: TerraformTask@5
+            displayName: 'Plan'
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              environmentServiceNameAzureRM: 'Azure subscription 1(68e44dea-d62f-4cee-a1be-36e44e37955e)'
+              workingDirectory: 'infra/'
+
+          - task: TerraformTask@5
+            displayName: 'Apply'
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              commandOptions: '--auto-approve'
+              environmentServiceNameAzureRM: 'Azure subscription 1(68e44dea-d62f-4cee-a1be-36e44e37955e)'
+              workingDirectory: 'infra/'
+
